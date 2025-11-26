@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.4
+    container_name: constructai-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: constructai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: constructai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: constructai-api-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/constructai
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api-gateway:/app
+      - /app/node_modules
+
+  bim-processor:
+    build:
+      context: .
+      dockerfile: services/bim-processor/Dockerfile
+    container_name: constructai-bim-processor
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - API_GATEWAY_URL=http://api-gateway:4000
+    volumes:
+      - ./services/bim-processor:/app
+      - /app/__pycache__
+
+  ai-ml:
+    build:
+      context: .
+      dockerfile: services/ai-ml/Dockerfile
+    container_name: constructai-ai-ml
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - API_GATEWAY_URL=http://api-gateway:4000
+    volumes:
+      - ./services/ai-ml:/app
+      - /app/__pycache__
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: constructai-web
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:4000
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    depends_on:
+      - api-gateway
+
+volumes:
+  postgres_data:
+  redis_data:
