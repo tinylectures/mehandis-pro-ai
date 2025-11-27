@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConstructAI Authentication Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.online {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+        
+        .status-indicator.offline {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ ConstructAI</h1>
+            <p>Authentication & Authorization System Demo</p>
+            <p style="margin-top: 10px;">
+                <span class="status-indicator online"></span>
+                <span id="serverStatus">Server Running on http://localhost:4000</span>
+            </p>
+        </div>
+        
+        <div class="card">
+            <div class="info-box">
+                <h3>✨ What We Built</h3>
+                <ul>
+                    <li><strong>JWT Authentication:</strong> Secure token-based authentication</li>
+                    <li><strong>Password Security:</strong> Bcrypt hashing with 10 salt rounds</li>
+                    <li><strong>RBAC:</strong> 4 roles with 24 distinct permissions</li>
+                    <li><strong>Session Management:</strong> Redis-based (or in-memory) sessions</li>
+                    <li><strong>Password Reset:</strong> Secure token generation and validation</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔐 Test Authentication</h2>
+            
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" value="john.doe@example.com" placeholder="Enter email">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" value="SecurePass123!" placeholder="Enter password">
+            </div>
+            
+            <div class="form-group">
+                <label>Role</label>
+                <select id="role">
+                    <option value="viewer">Viewer (Read-only access)</option>
+                    <option value="quantity_surveyor" selected>Quantity Surveyor</option>
+                    <option value="project_manager">Project Manager</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div>
+            
+            <button onclick="testAuth()">🚀 Test Full Authentication Flow</button>
+            
+            <div id="authResponse"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📋 Available API Endpoints</h2>
+            <div class="info-box">
+                <ul>
+                    <li><code>POST /api/auth/register</code> - Register new user</li>
+                    <li><code>POST /api/auth/login</code> - Login and receive JWT token</li>
+                    <li><code>POST /api/auth/refresh</code> - Refresh expired token</li>
+                    <li><code>POST /api/auth/password-reset/request</code> - Request password reset</li>
+                    <li><code>POST /api/auth/password-reset/confirm</code> - Confirm password reset</li>
+                    <li><code>POST /api/auth/logout</code> - Logout user</li>
+                    <li><code>GET /api/auth/sessions/:userId</code> - Get active sessions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function testAuth() {
+            const responseDiv = document.getElementById('authResponse');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            
+            let output = '=== Authentication Flow Test ===\n\n';
+            
+            try {
+                // Step 1: Health Check
+                output += '1. Health Check...\n';
+                const healthResponse = await fetch('http://localhost:4000/health');
+                const healthData = await healthResponse.json();
+                output += `   ✓ Server Status: ${healthData.status}\n\n`;
+                
+                // Step 2: Login (or Register if needed)
+                output += '2. Attempting Login...\n';
+                const loginResponse = await fetch('http://localhost:4000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (loginResponse.ok) {
+                    const loginData = await loginResponse.json();
+                    output += `   ✓ Login Successful!\n`;
+                    output += `   User: ${loginData.data.user.firstName} ${loginData.data.user.lastName}\n`;
+                    output += `   Role: ${loginData.data.user.role}\n`;
+                    output += `   Token: ${loginData.data.token.substring(0, 50)}...\n`;
+                    output += `   Expires in: ${loginData.data.expiresIn} seconds\n\n`;
+                    
+                    // Step 3: Show permissions for role
+                    output += '3. Role Permissions:\n';
+                    const permissions = getRolePermissions(loginData.data.user.role);
+                    permissions.forEach(perm => {
+                        output += `   ✓ ${perm}\n`;
+                    });
+                    
+                    responseDiv.className = 'response success';
+                } else {
+                    // Try to register
+                    output += '   ℹ User not found, attempting registration...\n\n';
+                    
+                    const registerResponse = await fetch('http://localhost:4000/api/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email,
+                            password,
+                            firstName: 'John',
+                            lastName: 'Doe',
+                            role,
+                            organizationId: '00000000-0000-0000-0000-000000000001'
+                        })
+                    });
+                    
+                    if (registerResponse.ok) {
+                        output += '   ✓ User Registered Successfully!\n';
+                        output += '   Please click the button again to login.\n';
+                        responseDiv.className = 'response success';
+                    } else {
+                        const errorData = await registerResponse.json();
+                        output += `   ✗ Error: ${errorData.error.message}\n`;
+                        output += '\n   Note: Database connection required for registration.\n';
+                        output += '   The authentication system is working, but needs PostgreSQL.\n';
+                        responseDiv.className = 'response error';
+                    }
+                }
+                
+            } catch (error) {
+                output += `\n✗ Error: ${error.message}\n\n`;
+                output += 'Make sure the API server is running on http://localhost:4000\n';
+                responseDiv.className = 'response error';
+            }
+            
+            responseDiv.textContent = output;
+        }
+        
+        function getRolePermissions(role) {
+            const permissions = {
+                admin: [
+                    'create:user', 'update:user', 'delete:user',
+                    'create:project', 'update:project', 'delete:project',
+                    'manage:organization', 'view:audit_logs'
+                ],
+                project_manager: [
+                    'create:project', 'update:project', 'archive:project',
+                    'assign:team_member', 'approve:cost_estimate'
+                ],
+                quantity_surveyor: [
+                    'upload:bim_model', 'calculate:quantities',
+                    'create:cost_estimate', 'update:cost_estimate',
+                    'generate:report'
+                ],
+                viewer: [
+                    'read:project', 'read:bim_model',
+                    'read:quantities', 'read:cost_estimate'
+                ]
+            };
+            return permissions[role] || [];
+        }
+        
+        // Check server status on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('http://localhost:4000/health');
+                if (response.ok) {
+                    document.getElementById('serverStatus').innerHTML = 
+                        '<span class="status-indicator online"></span>Server Online at http://localhost:4000';
+                }
+            } catch (error) {
+                document.getElementById('serverStatus').innerHTML = 
+                    '<span class="status-indicator offline"></span>Server Offline - Please start the server';
+            }
+        });
+    </script>
+</body>
+</html>

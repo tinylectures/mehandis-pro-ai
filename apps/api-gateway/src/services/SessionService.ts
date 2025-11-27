@@ -17,10 +17,15 @@ export class SessionService {
 
   constructor() {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    this.client = createClient({ url: redisUrl });
+    this.client = createClient({ 
+      url: redisUrl,
+      socket: {
+        reconnectStrategy: false // Don't retry if Redis is not available
+      }
+    });
     
     this.client.on('error', (err) => {
-      console.error('Redis Client Error:', err);
+      console.warn('Redis not available - sessions will be in-memory only:', err.message);
     });
 
     this.client.on('connect', () => {
@@ -30,7 +35,12 @@ export class SessionService {
 
   async connect(): Promise<void> {
     if (!this.client.isOpen) {
-      await this.client.connect();
+      try {
+        await this.client.connect();
+      } catch (error) {
+        console.warn('Could not connect to Redis. Sessions will work in-memory only.');
+        // Continue without Redis - the app will still work
+      }
     }
   }
 

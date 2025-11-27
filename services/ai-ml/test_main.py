@@ -7,4 +7,11 @@ client = TestClient(app)
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "service": "ai-ml"}
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["service"] == "ai-ml"
+    # Check that models are loaded
+    assert "models" in data
+    assert "anomaly_detector" in data["models"]
+    assert "cost_predictor" in data["models"]
+    assert "progress_analyzer" in data["models"]
